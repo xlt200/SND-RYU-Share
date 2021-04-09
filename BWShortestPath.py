@@ -117,11 +117,11 @@ class shortest_path(app_manager.RyuApp):
 				back_port = self.net[now_switch][back_switch]['port']
 				action = ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS, [ofp_parser.OFPActionOutput(next_port)])
 				inst = [action]
-				self.add_flow(dp=self.switch_map[now_switch], match=next_match, inst=inst, table=0)
+				self.add_flow(dp=self.switch_map[now_switch], match=next_match, inst=inst, table=0, idle_timeout=10)
 				
 				action = ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS, [ofp_parser.OFPActionOutput(back_port)])
 				inst = [action]
-				self.add_flow(dp=self.switch_map[now_switch], match=back_match, inst=inst, table=0)
+				self.add_flow(dp=self.switch_map[now_switch], match=back_match, inst=inst, table=0, idle_timeout=10)
 				print("now switch:%s" % now_switch)
 			
 			now_switch = path[1]
@@ -155,7 +155,7 @@ class shortest_path(app_manager.RyuApp):
 		#print(self.net.nodes())
 		#print(self.net.edges())
 
-	def add_flow(self, dp, cookie=0, match=None, inst=[], table=0, priority=10):
+	def add_flow(self, dp, cookie=0, match=None, inst=[], table=0, priority=10, idle_timeout=10000):
 		ofp = dp.ofproto
 		ofp_parser = dp.ofproto_parser
 		
@@ -165,7 +165,7 @@ class shortest_path(app_manager.RyuApp):
 				datapath=dp, cookie=cookie, table_id=table,
 				command=ofp.OFPFC_ADD, priority=priority, buffer_id=buffer_id,
 				out_port=ofp.OFPP_ANY, out_group=ofp.OFPG_ANY,
-				match=match, instructions=inst
+				match=match, instructions=inst, idle_timeout=idle_timeout
 		)
 		dp.send_msg(mod)
 
