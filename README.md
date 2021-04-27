@@ -10,4 +10,4 @@
   * <https://github.com/muzixing/ryu/tree/master/ryu/app/network_awareness>  
   <a/>
   <br/>
-  要注意其中對於源代碼switches.py的修改
+  要注意其中對於源代碼switches.py的修改，一開始的delay會有點高，過一會后就會恢復降低
