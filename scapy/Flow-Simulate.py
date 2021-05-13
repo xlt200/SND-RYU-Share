@@ -1,10 +1,9 @@
 from scapy.all import *
-import threading
 from multiprocessing import Pool
 from multiprocessing import Process
 import time
 
-time_intv = 3
+time_intv = 3 #流量的時間間隔，以10秒為單位
 
 packet1 = IP()
 packet1.src = "10.0.0.5"
