@@ -3,6 +3,7 @@ from multiprocessing import Pool
 from multiprocessing import Process
 import time
 
+#建立Flow類
 class Flow:
     
     def __init__(self, dst, src = '10.0.0.5', time_intv = 3, tos = 0):
@@ -20,11 +21,13 @@ class Flow:
         self.__packet.dst = self.dst
         self.__packet.tos = self.tos
     
+    #傳送視頻流量
     def __send_Video(self):
         time_end = time.time() + 10*self.time_intv
         while time.time() < time_end:
             send(self.__packet, count=800)
 
+    #傳送音訊流量
     def __send_Voice(self):
         time_end = time.time() + 10*self.time_intv
         while time.time() < time_end:
@@ -51,7 +54,7 @@ def sending_flow(flow):
 
 
 if __name__ == "__main__":
-    pro = Pool(processes = 6)
+    pro = Pool(processes = 6) # 建立6個進程
     
     flow1_voice = Flow(dst = '10.0.0.1', tos = 184)
     flow1_video = Flow(dst = '10.0.0.1', tos = 104)
