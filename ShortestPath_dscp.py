@@ -35,7 +35,7 @@ class shortest_path(app_manager.RyuApp):
 				self.echo_latency = {}
 				self.switch_mod = lookup_service_brick('switches')
 				hub.spawn(self.info_request_loop)
-			   #獲得拓撲信息，初始化圖
+						#獲得拓撲信息，初始化圖
 		
 		@set_ev_cls(event.EventSwitchEnter)
 		def get_topology_data(self, ev):
@@ -74,7 +74,7 @@ class shortest_path(app_manager.RyuApp):
 		def packet_in_handler(self, ev):
 				
 				AF3 = [104,112,120]
-				EF = [5]
+				EF = [184]
 				
 				msg= ev.msg
 				dp = msg.datapath
@@ -167,9 +167,10 @@ class shortest_path(app_manager.RyuApp):
 								path = nx.dijkstra_path(self.net, pkt_ethernet.src, pkt_ethernet.dst, weight='delay')
 							else:
 								path = nx.dijkstra_path(self.net, pkt_ethernet.src, pkt_ethernet.dst)
-						
-						next_match = ofp_parser.OFPMatch(eth_dst=pkt_ethernet.dst,eth_src=pkt_ethernet.src)
-						back_match = ofp_parser.OFPMatch(eth_dst=pkt_ethernet.src,eth_src=pkt_ethernet.dst)
+								ip_info.tos = 0 #强制其tos段等于0
+										
+						next_match = ofp_parser.OFPMatch(eth_dst=pkt_ethernet.dst,eth_src=pkt_ethernet.src,eth_type=0x0800,ipv4_src=ip_info.src, ipv4_dst=ip_info.dst, ip_dscp=int(ip_info.tos/4))
+						back_match = ofp_parser.OFPMatch(eth_dst=pkt_ethernet.src,eth_src=pkt_ethernet.dst,eth_type=0x0800,ipv4_src=ip_info.src, ipv4_dst=ip_info.dst, ip_dscp=int(ip_info.tos/4))
 						print(path)
 						#依照計算后算出的路徑下發流表
 						for on_path_switch in range(1, len(path)-1):
@@ -180,11 +181,11 @@ class shortest_path(app_manager.RyuApp):
 								back_port = self.net[now_switch][back_switch]['port']
 								action = ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS, [ofp_parser.OFPActionOutput(next_port)])
 								inst = [action]
-								self.add_flow(dp=self.switch_map[now_switch], match=next_match, inst=inst, table=0, idle_timeout=5)
+								self.add_flow(dp=self.switch_map[now_switch], match=next_match, inst=inst, table=0, idle_timeout=50)
 								
 								action = ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS, [ofp_parser.OFPActionOutput(back_port)])
 								inst = [action]
-								self.add_flow(dp=self.switch_map[now_switch], match=back_match, inst=inst, table=0, idle_timeout=5)
+								self.add_flow(dp=self.switch_map[now_switch], match=back_match, inst=inst, table=0, idle_timeout=50)
 								print("now switch:%s" % now_switch)
 						
 						now_switch = path[1]
@@ -195,7 +196,7 @@ class shortest_path(app_manager.RyuApp):
 						dp.send_msg(out)
 				else:
 						return
-				   
+							
 
 		#處理arp廣播风暴，以dpid以及src-mac当作key，value为inport，若傳進来的inport没被記錄，则代表
 		#是会造成廣播风暴的arp封包
@@ -209,7 +210,7 @@ class shortest_path(app_manager.RyuApp):
 						self.mac_to_port[(datapath,datapath.id)][src] = in_port
 						return True
 
-		def add_flow(self, dp, cookie=0, match=None, inst=[], table=0, priority=10, idle_timeout=10000):
+		def add_flow(self, dp, cookie=0, match=None, inst=[], table=0, priority=10, idle_timeout=0):
 				ofp = dp.ofproto
 				ofp_parser = dp.ofproto_parser
 				
@@ -303,8 +304,8 @@ class shortest_path(app_manager.RyuApp):
 								self.net[dpid][dst_dpid]["bw"] = (BW/1000000)*8
 								#print("link {} -> {} bw: {}".format(dpid,dst_dpid,self.net[dpid][dst_dpid]["bw"]))
 		
-				#self.infos_print() # 打印網路圖信息
-		 
+				self.infos_print() # 打印網路圖信息
+			
 
 		def _send_echo_request(self):
 			#傳送echo-request給switch
@@ -327,7 +328,7 @@ class shortest_path(app_manager.RyuApp):
 				return float('inf')
 
 		def create_link_delay(self):
-			 # 獲得link的delay并將其保存在圖里
+				# 獲得link的delay并將其保存在圖里
 			for src_dpid in self.net:
 				for dst_dpid in self.net[src_dpid]:
 					if src_dpid == dst_dpid:
